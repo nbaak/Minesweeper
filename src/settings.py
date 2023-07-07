@@ -1,0 +1,4 @@
+
+
+GRID_SIZE = 10
+NUM_MINES = 10
