@@ -35,29 +35,29 @@ pygame.display.set_caption("Minesweeper")
 def create_board():
     board = [[0] * GRID_SIZE for _ in range(GRID_SIZE)]
     mines = []
-    
+
     while len(mines) < NUM_MINES:
         row = random.randint(0, GRID_SIZE - 1)
         col = random.randint(0, GRID_SIZE - 1)
-        
+
         if (row, col) not in mines:
             mines.append((row, col))
             board[row][col] = -1
-            
+
             for i in range(row - 1, row + 2):
                 for j in range(col - 1, col + 2):
                     if 0 <= i < GRID_SIZE and 0 <= j < GRID_SIZE and board[i][j] != -1:
                         board[i][j] += 1
-    
-    return board
+
+    return board, mines
 
 # Function to reveal a cell
 def reveal_cell(row, col):
     if revealed[row][col]:
         return
-    
+
     revealed[row][col] = True
-    
+
     if board[row][col] == -1:
         game_over()
     elif board[row][col] == 0:
@@ -77,12 +77,18 @@ def game_over():
         for col in range(GRID_SIZE):
             revealed[row][col] = True
 
+# Function to check if the game is won
+def game_won(mines, marked):
+    return all([marked[x][y] for x,y in mines])
+
 # Function to reset the game
 def reset_game():
-    global board, revealed, marked
-    board = create_board()
+    global board, revealed, marked, mines
+    board, mines = create_board()
     revealed = [[False] * GRID_SIZE for _ in range(GRID_SIZE)]
     marked = [[False] * GRID_SIZE for _ in range(GRID_SIZE)]
+
+    sorted(mines)
 
 # Function to draw the grid
 def draw_grid():
@@ -90,10 +96,10 @@ def draw_grid():
         for col in range(GRID_SIZE):
             x = col * CELL_SIZE
             y = row * CELL_SIZE
-            
+
             if revealed[row][col]:
                 pygame.draw.rect(window, WHITE, (x, y, CELL_SIZE, CELL_SIZE))
-                
+
                 if board[row][col] == -1:
                     pygame.draw.circle(window, RED, (x + CELL_SIZE // 2, y + CELL_SIZE // 2), CELL_SIZE // 4)
                 elif board[row][col] > 0:
@@ -106,7 +112,7 @@ def draw_grid():
                     pygame.draw.circle(window, RED, (x + CELL_SIZE // 2, y + CELL_SIZE // 2), CELL_SIZE // 4)
                 else:
                     pygame.draw.rect(window, GRAY, (x, y, CELL_SIZE, CELL_SIZE))
-    
+
     for i in range(GRID_SIZE + 1):
         pygame.draw.line(window, BLACK, (i * CELL_SIZE, 0), (i * CELL_SIZE, WINDOW_HEIGHT))
         pygame.draw.line(window, BLACK, (0, i * CELL_SIZE), (WINDOW_WIDTH, i * CELL_SIZE))
@@ -119,10 +125,14 @@ def take_screenshot():
     pygame.image.save(window, filename)
     print(f"Screenshot saved as {filename}")
 
-# Create the game board
-board = create_board()
-revealed = [[False] * GRID_SIZE for _ in range(GRID_SIZE)]
-marked = [[False] * GRID_SIZE for _ in range(GRID_SIZE)]
+# Prepare Variables
+mines = []
+board = []
+revealed = []
+marked = []
+
+# Create Initial Board
+reset_game()
 
 # Game loop
 running = True
@@ -135,7 +145,7 @@ while running:
             pos = pygame.mouse.get_pos()
             col = pos[0] // CELL_SIZE
             row = pos[1] // CELL_SIZE
-            
+
             if event.button == 1:
                 reveal_cell(row, col)
             elif event.button == 3:
@@ -145,13 +155,19 @@ while running:
                 reset_game()
             elif event.key == pygame.K_s:
                 take_screenshot()
-    
+
     # Clear the window
     window.fill(BLACK)
-    
+
     # Draw the grid
     draw_grid()
-    
+
+    # Check if the game is won
+    if game_won(mines, marked):
+        print("You won the game!")
+        # You can add any other code here to handle a game win condition
+        # For example, displaying a message, playing a sound, or resetting the game.
+
     # Update the display
     pygame.display.flip()
 
